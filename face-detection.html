@@ -12,6 +12,11 @@
     <script type="text/javascript" src="https://unpkg.com/webcam-easy/dist/webcam-easy.min.js"></script>
 </head>
 <body>
+    <header>
+        <h1>Emotion Recognition In Aphasia Patients</h1>
+    </header>
+    
+    
         <main>
             <div class="container mt-1">
                 <div class="row">
@@ -38,16 +43,6 @@
                                         <input type="checkbox" disabled id="landmarks-switch">
                                         <i></i> Landmarks </label>      
                                 </div>
-                                <!-- <div class="col-md-10 col-6 form-control">
-                                        <label class="form-switch disabled">
-                                        <input type="checkbox" disabled id="expression-switch">
-                                        <i></i> Expression </label>      
-                                </div>     -->
-                                <!-- <div class="col-md-10 col-6 form-control">
-                                        <label class="form-switch disabled">
-                                        <input type="checkbox" disabled id="age-gender-switch">
-                                        <i></i> Age & Gender </label>      
-                                </div>       -->
                         </div>
                     </div>
                     <div class="col-12 col-md-8 col-xl-9 align-top" id="webcam-container">
@@ -67,30 +62,87 @@
                         2. If you are browsing through social media built in browsers, look for the ... or browser icon on the right top/bottom corner, and open the page in Sarafi (iPhone)/ Chrome (Android)
                         </div>
 
-                        <div class="col-12 alert-primary">
-                                Current Emotion (Our): <span id="predictedEmotion"></span>
-                                <br>
-                                Current Emotion (Model): <span id="currentEmotion"></span>
-                                <br>
-                                Neutral Left Angle: <span id="neutralLeftAngle"></span>
-                                <br>
-                                Neutral Right Angle: <span id="neutralRightAngle"></span>
-                                <br>
-                                neutral lip: <span id="neutralDistanceLipTopBottom"></span>
-                                <br>
-                                neutral eyebrow: <span id="neutralDistanceEyebrow"></span>
-                                <br>
-                                Current Left Angle: <span id="currentLeftAngle"></span>
-                                <br>
-                                Current Right Angle: <span id="currentRightAngle"></span>
-                                <br>
-                                Angle Deviation (Left): <span id="currentAngleDeviationLeft"></span>
-                                <br>
-                                Angle Deviation (Right): <span id="currentAngleDeviationRight"></span>
-                                <br>
-                                lip deviation: <span id="lipDeviation"></span>
-                                <br>
-                                eyebrow deviation: <span id="eyebrowDeviation"></span>
+                        <div class="col-12">
+
+                                <div class="container mt-5">
+                                        <!-- Accordion -->
+                                        <div id="accordion">
+                                            <!-- Predictions -->
+                                            <div class="card">
+                                                <div class="card-header" id="headingThree">
+                                                    <h5 class="mb-0" data-toggle="collapse" data-target="#collapseThree">Emotion Predictions</h5>
+                                                </div>
+                                                <div id="collapseThree" class="collapse show" aria-labelledby="headingThree">
+                                                    <div class="card-body alert-info">
+                                                        Our Algorithm: <span id="predictedEmotion"></span><br>
+                                                        Pre-Trained Model: <span id="currentEmotion"></span><br>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Neutral Parameters -->
+                                            <div class="card">
+                                                <div class="card-header" id="headingOne">
+                                                    <h5 class="mb-0" data-toggle="collapse" data-target="#collapseOne">Neutral Parameters</h5>
+                                                </div>
+                                                <div id="collapseOne" class="collapse" aria-labelledby="headingOne">
+                                                    <div class="card-body">
+                                                        Eye-Nose-Lip Angle (Left): <span id="neutralLeftAngle"></span><br>
+                                                        Eye-Nose-Lip Angle (Right): <span id="neutralRightAngle"></span><br>
+                                                        Lip Distance: <span id="neutralDistanceLipTopBottom"></span><br>
+                                                        Eyebrow: <span id="neutralDistanceEyebrow"></span><br>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Deviations -->
+                                            <div class="card">
+                                                <div class="card-header" id="headingFive">
+                                                    <h5 class="mb-0" data-toggle="collapse" data-target="#collapseFive">Deviations</h5>
+                                                </div>
+                                                <div id="collapseFive" class="collapse" aria-labelledby="headingFive">
+                                                    <div class="card-body">
+                                                        Eye-Nose-Lip Angle Deviation (Left): <span id="currentAngleDeviationLeft"></span><br>
+                                                        Eye-Nose-Lip Angle Deviation (Right): <span id="currentAngleDeviationRight"></span><br>
+                                                        Lip Distance Deviation: <span id="lipDeviation"></span><br>
+                                                        Eyebrow-Eye Deviation (Left): <span id="eyebrowEyeDeviationLeft"></span><br>
+                                                        Eyebrow-Eye Deviation (Right): <span id="eyebrowEyeDeviationRight"></span><br>
+                                                        Slope Deviation (Left): <span id="slopeDeviationLeft"></span><br>
+                                                        Slope Deviation (Right): <span id="slopeDeviationRight"></span><br>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Thresholds -->
+                                            <div class="card">
+                                                <div class="card-header" id="headingFour">
+                                                    <h5 class="mb-0" data-toggle="collapse" data-target="#collapseFour">Thresholds</h5>
+                                                </div>
+                                                <div id="collapseFour" class="collapse" aria-labelledby="headingFour">
+                                                    <div class="card-body">
+                                                        Happy Angle: <span id="happyAngleThreshold"></span><br>
+                                                        Sad Angle: <span id="sadAngleThreshold"></span><br>
+                                                        Lip Distance: <span id="lipDistanceThreshold"></span><br>
+                                                        Eyebrow-Eye Distance: <span id="eyebrowEyeDistanceThreshold"></span><br>
+                                                        Eyebrow Slope : <span id="eyebrowSlopeThreshold"></span><br>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+                                    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+                                    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>                                
+                                    <script>
+                                        $('.card-header').click(function() {
+                                            var collapseElementId = $(this).find('[data-toggle="collapse"]').data('target');
+                                            var isAlreadyOpen = $(collapseElementId).hasClass('show');
+                                            if (isAlreadyOpen) {
+                                                $(collapseElementId).collapse('hide');
+                                            } else {
+                                                $(collapseElementId).collapse('show');
+                                            }
+                                        });
+                                    </script>
                         </div>
                     </div>
                 </div>

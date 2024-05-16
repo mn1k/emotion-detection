@@ -154,3 +154,10 @@
     padding: 20px;
     z-index: 999999;
 }
+
+header {
+  background-color: #153448;
+  color: #fff;
+  padding: 15px;
+  text-align: center;
+}

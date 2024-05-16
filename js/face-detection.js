@@ -9,25 +9,47 @@ let faceDetection;
 webcam.start()
 cameraStarted();
 
+// For Happy
 var neutralLeftAngle = 0;
 var neutralRightAngle = 0;
-var neutralDistanceLipTopBottom = 0;
-var neutralDistanceEyebrow = 0
 
-var happyAngleThreshold = 5;
-var sadAngleThreshold = 2;
-var lipDistanceThreshold = 10;
-var eyebrowDistanceThreshold = 0;
+// For Surprise
+var neutralDistanceLipTopBottom = 0;
+
+// For Anger
+var neutralDistanceEyebrow = 0
+var neutralLeftEyebrowSlope  = 0
+var neutralRightEyebrowSlope = 0
+var neutralEyebrowEyeDistanceLeft
+var neutralEyebrowEyeDistanceRight
+
+// * Thresholds
+const happyAngleThreshold = 5;
+const sadAngleThreshold = 2;
+const lipDistanceThreshold = 10;
+const eyebrowDistanceThreshold = 0;
+
+const angerEyebrowThreshold = 5
+const angerEyebrowEyeThreshold = 4
+const angerSlopeThreshold = 0.15
+
+document.getElementById('happyAngleThreshold').innerHTML = happyAngleThreshold
+document.getElementById('sadAngleThreshold').innerHTML = sadAngleThreshold
+document.getElementById('lipDistanceThreshold').innerHTML = lipDistanceThreshold
+document.getElementById('eyebrowEyeDistanceThreshold').innerHTML = angerEyebrowEyeThreshold
+document.getElementById('eyebrowSlopeThreshold').innerHTML = angerSlopeThreshold
+
 var flag = 0
 var predictedEmotion = null;
+
 
 $("#webcam-switch").change(function () {
   if(this.checked){
       webcam.start()
           .then(result =>{
-             cameraStarted();
-             webcamElement.style.transform = "";
-             console.log("webcam started");
+            cameraStarted();
+            webcamElement.style.transform = "";
+            console.log("webcam started");
           })
           .catch(err => {
               displayError();
@@ -107,7 +129,6 @@ function toggleContrl(id, show){
 async function startDetection(){
   faceDetection = setInterval(async () => {
     const detections = await faceapi.detectAllFaces(webcamElement, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true).withFaceExpressions().withAgeAndGender()
-    // const detections = await faceapi.detectSingleFace(webcamElement, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true).withFaceExpressions().withAgeAndGender()
     const resizedDetections = faceapi.resizeResults(detections, displaySize)
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
     
@@ -119,8 +140,6 @@ async function startDetection(){
       const lipRight = landmarks._positions[54]
       const lipTop = landmarks._positions[51]
       const lipBottom = landmarks._positions[57]
-      const jawLeft = landmarks._positions[3]
-      const jawRight = landmarks._positions[13]
       const eyebrowLeftCenter = landmarks._positions[21]
       const eyebrowRightCentre = landmarks._positions[22]
 
@@ -130,6 +149,9 @@ async function startDetection(){
       var distanceLipTopBottom = calculateDistance(lipTop, lipBottom);
       var distanceEyebrow = calculateDistance(eyebrowRightCentre, eyebrowLeftCenter);
 
+      var distanceEyebrowEyeRight  = calculateDistance(eyebrowRightCentre, landmarks._positions[39])
+      var distanceEyebrowEyeLeft  = calculateDistance(eyebrowLeftCenter, landmarks._positions[42])
+
       var dominantEmotion = await getDominantEmotion(detections[0].expressions);
 
       if (dominantEmotion == 'neutral' && flag == 0) {
@@ -137,6 +159,11 @@ async function startDetection(){
         neutralRightAngle = Math.max(neutralRightAngle, rightAngle);
         neutralDistanceLipTopBottom = Math.max(neutralDistanceLipTopBottom, distanceLipTopBottom);
         neutralDistanceEyebrow = Math.max(neutralDistanceEyebrow, distanceEyebrow);
+        neutralLeftEyebrowSlope = calculateSlope(landmarks._positions[21], landmarks._positions[17]); 
+        neutralRightEyebrowSlope = calculateSlope(landmarks._positions[22], landmarks._positions[27]);
+        neutralEyebrowEyeDistanceLeft = distanceEyebrowEyeLeft;
+        neutralEyebrowEyeDistanceRight = distanceEyebrowEyeRight;
+        
         flag = 1;
       }
 
@@ -145,17 +172,31 @@ async function startDetection(){
       var lipDeviation = distanceLipTopBottom - neutralDistanceLipTopBottom;
       var eyebrowDeviation = distanceEyebrow - neutralDistanceEyebrow;
 
-      if(happyAngleThreshold < currentAngleDeviationLeft && happyAngleThreshold < currentAngleDeviationRight){
-        predictedEmotion = 'happy';
-      }
-      else if(lipDeviation >= lipDistanceThreshold){
+      // Calculate current slopes
+      var currentLeftEyebrowSlope = calculateSlope(landmarks._positions[21], landmarks._positions[17]);
+      var currentRightEyebrowSlope = calculateSlope(landmarks._positions[22], landmarks._positions[27]);
+      // Calculate slope changes
+      var leftEyebrowSlopeChange = Math.abs(currentLeftEyebrowSlope - neutralLeftEyebrowSlope);
+      var rightEyebrowSlopeChange = Math.abs(currentRightEyebrowSlope - neutralRightEyebrowSlope);
+
+      var eyebrowEyeDeviationLeft = Math.abs(neutralEyebrowEyeDistanceLeft - distanceEyebrowEyeLeft);
+      var eyebrowEyeDeviationRight = Math.abs(neutralEyebrowEyeDistanceRight - distanceEyebrowEyeRight);
+
+      // * Order of Emotions helps when one emotion is likely to be dominated by another
+      if(lipDeviation >= lipDistanceThreshold){
         predictedEmotion = 'surprised';
       }
       else if(sadAngleThreshold < -1 * currentAngleDeviationLeft && sadAngleThreshold < -1 * currentAngleDeviationRight){
         predictedEmotion = 'sad';
       }
-      else if(eyebrowDeviation <= eyebrowDistanceThreshold){
+      else if(
+        (eyebrowEyeDeviationLeft >= angerEyebrowEyeThreshold && eyebrowEyeDeviationRight >= angerEyebrowEyeThreshold) ||
+        (leftEyebrowSlopeChange > angerSlopeThreshold && rightEyebrowSlopeChange > angerSlopeThreshold)
+      ){
         predictedEmotion = 'angry';
+      }
+      else if(happyAngleThreshold < currentAngleDeviationLeft && happyAngleThreshold < currentAngleDeviationRight){
+        predictedEmotion = 'happy';
       }
       else{
         predictedEmotion = 'neutral';
@@ -167,12 +208,11 @@ async function startDetection(){
       document.getElementById('neutralRightAngle').innerHTML = neutralRightAngle;
       document.getElementById('neutralDistanceLipTopBottom').innerHTML = neutralDistanceLipTopBottom;
       document.getElementById('neutralDistanceEyebrow').innerHTML = neutralDistanceEyebrow;
-      document.getElementById('currentLeftAngle').innerHTML = leftAngle;
-      document.getElementById('currentRightAngle').innerHTML = rightAngle;
-      document.getElementById('currentAngleDeviationLeft').innerHTML = currentAngleDeviationLeft;
-      document.getElementById('currentAngleDeviationRight').innerHTML = currentAngleDeviationRight;
       document.getElementById('lipDeviation').innerHTML = lipDeviation;
-      document.getElementById('eyebrowDeviation').innerHTML = eyebrowDeviation;
+      document.getElementById('eyebrowEyeDeviationLeft').innerHTML = eyebrowEyeDeviationLeft;
+      document.getElementById('eyebrowEyeDeviationRight').innerHTML = eyebrowEyeDeviationRight;
+      document.getElementById('slopeDeviationLeft').innerHTML = leftEyebrowSlopeChange;
+      document.getElementById('slopeDeviationRight').innerHTML = rightEyebrowSlopeChange;
     }
     
     if($("#box-switch").is(":checked")){
@@ -221,6 +261,28 @@ function displayError(err = ''){
       $("#errorMsg").html(err);
   }
   $("#errorMsg").removeClass("d-none");
+}
+
+function detectAnger(neutralLandmarks, currentLandmarks) {
+  // Example: Check if the distance between eyebrows has decreased
+  const neutralDistance = calculateDistance(neutralLandmarks[21], neutralLandmarks[22]); // Eyebrow inner ends
+  const currentDistance = calculateDistance(currentLandmarks[21], currentLandmarks[22]);
+
+  // Example: Check if the eyebrows are lowered
+  const neutralAngle = calculateAngle(neutralLandmarks[19], neutralLandmarks[21], neutralLandmarks[24]);
+  const currentAngle = calculateAngle(currentLandmarks[19], currentLandmarks[21], currentLandmarks[24]);
+
+  if (currentDistance < neutralDistance * 0.9 && currentAngle < neutralAngle) {
+      return true; // Anger detected
+  }
+  return false;
+}
+
+
+// Function to calculate the slope between two points
+function calculateSlope(point1, point2) {
+  if (point2.x === point1.x) return Infinity; // Avoid division by zero
+  return Math.abs(point2.y - point1.y) / Math.abs(point2.x - point1.x);
 }
 
 // Function to calculate the angle between three points
